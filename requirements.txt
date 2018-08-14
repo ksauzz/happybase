@@ -1,2 +1,2 @@
 six
-thriftpy>=0.3.8
+thrift>=0.11.0

@@ -7,11 +7,12 @@ HappyBase connection module.
 import logging
 
 import six
-from thriftpy.thrift import TClient
-from thriftpy.transport import TBufferedTransport, TFramedTransport, TSocket
-from thriftpy.protocol import TBinaryProtocol, TCompactProtocol
+from thrift.transport.TSocket import TSocket
+from thrift.transport.TTransport import TBufferedTransport, TFramedTransport
+from thrift.protocol import TBinaryProtocol, TCompactProtocol
 
-from Hbase_thrift import Hbase, ColumnDescriptor
+from .hbase import Hbase
+from .hbase.ttypes import ColumnDescriptor
 
 from .table import Table
 from .util import ensure_bytes, pep8_to_camel_case
@@ -26,8 +27,8 @@ THRIFT_TRANSPORTS = dict(
     framed=TFramedTransport,
 )
 THRIFT_PROTOCOLS = dict(
-    binary=TBinaryProtocol,
-    compact=TCompactProtocol,
+    binary=TBinaryProtocol.TBinaryProtocolAccelerated,
+    compact=TCompactProtocol.TCompactProtocol,
 )
 
 DEFAULT_HOST = 'localhost'
@@ -151,11 +152,12 @@ class Connection(object):
 
     def _refresh_thrift_client(self):
         """Refresh the Thrift socket, transport, and client."""
-        socket = TSocket(host=self.host, port=self.port, socket_timeout=self.timeout)
+        socket = TSocket(host=self.host, port=self.port)
+        socket.setTimeout(self.timeout)
 
         self.transport = self._transport_class(socket)
-        protocol = self._protocol_class(self.transport, decode_response=False)
-        self.client = TClient(Hbase, protocol)
+        protocol = self._protocol_class(self.transport)
+        self.client = Hbase.Client(protocol)
 
     def _table_name(self, name):
         """Construct a table name by optionally adding a table name prefix."""
@@ -169,7 +171,7 @@ class Connection(object):
 
         This method opens the underlying Thrift transport (TCP connection).
         """
-        if self.transport.is_open():
+        if self.transport.isOpen():
             return
 
         logger.debug("Opening Thrift transport to %s:%d", self.host, self.port)
@@ -180,7 +182,7 @@ class Connection(object):
 
         This method closes the underlying Thrift transport (TCP connection).
         """
-        if not self.transport.is_open():
+        if not self.transport.isOpen():
             return
 
         if logger is not None:
