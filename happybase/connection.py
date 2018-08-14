@@ -159,7 +159,11 @@ class Connection(object):
         socket = self._socket()
         socket.setTimeout(self.timeout)
 
-        self.transport = self._transport_class(socket)
+        if self._transport_class == TSaslClientTransport:
+            self.transport = self._transport_class(socket, host=self.host, service='hbase')
+        else:
+            self.transport = self._transport_class(socket)
+
         protocol = self._protocol_class(self.transport)
         self.client = Hbase.Client(protocol)
 
