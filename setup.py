@@ -13,11 +13,24 @@ def get_file_contents(filename):
 def get_install_requires():
     requirements = get_file_contents('requirements.txt')
     install_requires = []
+    dependency_links = []
     for line in requirements.split('\n'):
         line = line.strip()
-        if line and not line.startswith('-'):
+        if line and line.startswith('https://'):
+            egg = line.split('#')[1].split('&')[0].strip('egg=')
+            pos = egg.rfind('-')
+            name = egg[:pos]
+            ver = egg[pos+1:]
+
+            install_requires.append('=='.join((name, ver)))
+            dependency_links.append(line)
+
+        elif line and not line.startswith('-'):
             install_requires.append(line)
-    return install_requires
+    return install_requires, dependency_links
+
+
+install_requires, dependency_links = get_install_requires()
 
 
 setup(
@@ -29,7 +42,8 @@ setup(
     author="Wouter Bolsterlee",
     author_email="uws@xs4all.nl",
     url='https://github.com/wbolster/happybase',
-    install_requires=get_install_requires(),
+    install_requires=install_requires,
+    dependency_links=dependency_links,
     packages=find_packages(exclude=['tests']),
     license="MIT",
     classifiers=(

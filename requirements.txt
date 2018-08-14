@@ -1,2 +1,4 @@
 six
-thrift>=0.11.0
+https://github.com/ksauzz/pure-sasl/archive/fix/type-err.zip#egg=pure-sasl-0.5.1.1
+https://github.com/ksauzz/thrift/archive/fix/py-sasl-concat-err.zip#egg=thrift-0.11.0.1&subdirectory=lib/py
+
