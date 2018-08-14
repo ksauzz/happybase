@@ -8,7 +8,8 @@ import logging
 
 import six
 from thrift.transport.TSocket import TSocket
-from thrift.transport.TTransport import TBufferedTransport, TFramedTransport
+from thrift.transport.TSSLSocket import TSSLSocket
+from thrift.transport.TTransport import TBufferedTransport, TFramedTransport, TSaslClientTransport
 from thrift.protocol import TBinaryProtocol, TCompactProtocol
 
 from .hbase import Hbase
@@ -25,6 +26,7 @@ COMPAT_MODES = ('0.90', '0.92', '0.94', '0.96', '0.98')
 THRIFT_TRANSPORTS = dict(
     buffered=TBufferedTransport,
     framed=TFramedTransport,
+    sasl=TSaslClientTransport,
 )
 THRIFT_PROTOCOLS = dict(
     binary=TBinaryProtocol.TBinaryProtocolAccelerated,
@@ -105,11 +107,12 @@ class Connection(object):
     :param str table_prefix_separator: Separator used for `table_prefix`
     :param str compat: Compatibility mode (optional)
     :param str transport: Thrift transport mode (optional)
+    :param bool ssl: use TLS (optional)
     """
     def __init__(self, host=DEFAULT_HOST, port=DEFAULT_PORT, timeout=None,
                  autoconnect=True, table_prefix=None,
                  table_prefix_separator=b'_', compat=DEFAULT_COMPAT,
-                 transport=DEFAULT_TRANSPORT, protocol=DEFAULT_PROTOCOL):
+                 transport=DEFAULT_TRANSPORT, protocol=DEFAULT_PROTOCOL, tls=False):
 
         if transport not in THRIFT_TRANSPORTS:
             raise ValueError("'transport' must be one of %s"
@@ -143,6 +146,7 @@ class Connection(object):
 
         self._transport_class = THRIFT_TRANSPORTS[transport]
         self._protocol_class = THRIFT_PROTOCOLS[protocol]
+        self._tls = tls
         self._refresh_thrift_client()
 
         if autoconnect:
@@ -152,12 +156,19 @@ class Connection(object):
 
     def _refresh_thrift_client(self):
         """Refresh the Thrift socket, transport, and client."""
-        socket = TSocket(host=self.host, port=self.port)
+        socket = self._socket()
         socket.setTimeout(self.timeout)
 
         self.transport = self._transport_class(socket)
         protocol = self._protocol_class(self.transport)
         self.client = Hbase.Client(protocol)
+
+    def _socket(self):
+        if self._tls:
+            return  TSSLSocket(host=self.host, port=self.port)
+        else:
+            return  TSocket(host=self.host, port=self.port)
+
 
     def _table_name(self, name):
         """Construct a table name by optionally adding a table name prefix."""
