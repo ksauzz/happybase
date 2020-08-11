@@ -1,4 +1,4 @@
 six
-https://github.com/ksauzz/pure-sasl/archive/0.5.1.1.tar.gz#egg=pure-sasl-0.5.1.1
-https://github.com/ksauzz/thrift/archive/0.11.0.2.tar.gz#egg=thrift-0.11.0.2&subdirectory=lib/py
+pure-sasl @ https://github.com/ksauzz/pure-sasl/archive/0.5.1.1.tar.gz#egg=pure-sasl-0.5.1.1
+thrift @ https://github.com/ksauzz/thrift/archive/0.11.0.2.tar.gz#egg=thrift-0.11.0.2&subdirectory=lib/py
 
